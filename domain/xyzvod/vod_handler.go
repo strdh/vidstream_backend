@@ -5,6 +5,7 @@ import (
     "os"
     "log"
     "bytes"
+    "strconv"
     "net/http"
     "xyzstream/utils"
     "github.com/gorilla/mux"
@@ -40,7 +41,13 @@ func VodListNext(w http.ResponseWriter, r *http.Request) {
     }
 
     vars := mux.Vars(r)
-    id := vars["id"]
+    idStr := vars["id"]
+    id, err := strconv.Atoi(idStr)
+    if err != nil {
+        log.Println(err)
+        utils.WriteResponse(w, r, http.StatusBadRequest, "Bad request", nil)
+        return
+    }
 
     vods, err := VodsNext(id)
     if err != nil {

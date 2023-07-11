@@ -39,7 +39,7 @@ func Vods() ([]Vod, error) {
 }
 
 func VodsNext(id int) ([]Vod, error) {
-    var vods []vod
+    var vods []Vod
     var temp Vod
 
     rows, err := config.DB.Query("SELECT * FROM vods WHERE id <= ? ORDER BY created DESC LIMIT 30", id)
