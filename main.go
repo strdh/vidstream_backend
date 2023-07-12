@@ -5,11 +5,12 @@ import (
     "fmt"
     "os"
     "net/http"
-    "github.com/gorilla/mux"
-    "github.com/joho/godotenv"
     "xyzstream/config"
     "xyzstream/utils"
     "xyzstream/domain/xyzvod"
+    "xzystream/domain/xyzauth"
+    "github.com/joho/godotenv"
+    "github.com/gorilla/mux"
     "xyzstream/middleware"
 )
 
@@ -25,11 +26,14 @@ func main() {
     router := mux.NewRouter()
     router.Use(corsOptions)
 
+    router.HandleFunc("/register", xyzauth.Register).Methods("POST", "OPTIONS")
+    router.HandleFunc("/login", xyzauth.Login).Methods("POST", "OPTIONS")
+
     router.HandleFunc("/vodupload", middleware.JWTMiddleware(xyzvod.VodUpload)).Methods("POST", "OPTIONS")
     router.HandleFunc("/vod", xyzvod.VodList).Methods("GET", "OPTIONS")
     router.HandleFunc("/vod/next/{id}", xyzvod.VodListNext).Methods("GET", "OPTIONS")
-    router.HandleFunc("/vod/{vodulid}", xyzvod.VodStream).Methods("GET", "OPTIONS")
-    router.HandleFunc("/vod/stream/{segment}", xyzvod.VodSegment).Methods("GET", "OPTIONS")
+    router.HandleFunc("/vod/{vodulid}", xyzvod.VodDetail).Methods("GET", "OPTIONS")
+    router.HandleFunc("/vod/stream/{segment}", xyzvod.VodStream).Methods("GET", "OPTIONS")
 
     server := http.Server{
         Addr: os.Getenv("STREAM_ADDRESS"),

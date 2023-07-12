@@ -10,4 +10,5 @@ require (
 	github.com/jmespath/go-jmespath v0.4.0 // indirect
 	github.com/joho/godotenv v1.5.1 // indirect
 	github.com/oklog/ulid/v2 v2.1.0 // indirect
+	golang.org/x/crypto v0.11.0 // indirect
 )

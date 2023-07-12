@@ -59,7 +59,7 @@ func VodListNext(w http.ResponseWriter, r *http.Request) {
     utils.WriteResponse(w, r, http.StatusOK, "OK", vods)
 }
 
-func VodStream(w http.ResponseWriter, r *http.Request) {
+func VodDetail(w http.ResponseWriter, r *http.Request) {
     if r.Method != http.MethodGet {
         utils.WriteResponse(w, r, http.StatusMethodNotAllowed, "Method not allowed", nil)
         return
@@ -79,7 +79,7 @@ func VodStream(w http.ResponseWriter, r *http.Request) {
     return
 }
 
-func VodSegment(w http.ResponseWriter, r *http.Request) {
+func VodStream(w http.ResponseWriter, r *http.Request) {
     if r.Method != http.MethodGet {
         utils.WriteResponse(w, r, http.StatusMethodNotAllowed, "Method not allowed", nil)
         return
@@ -88,6 +88,7 @@ func VodSegment(w http.ResponseWriter, r *http.Request) {
     vars := mux.Vars(r)
     segment := vars["segment"]
 
+    //read the data from s3 object storage
     segmentData, err := utils.ObjRead(os.Getenv("XYZ1_BUCKET"), segment)
     if err != nil {
         log.Println(err)
