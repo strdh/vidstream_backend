@@ -8,7 +8,7 @@ import (
     "xyzstream/config"
     "xyzstream/utils"
     "xyzstream/domain/xyzvod"
-    "xzystream/domain/xyzauth"
+    "xyzstream/domain/xyzauth"
     "github.com/joho/godotenv"
     "github.com/gorilla/mux"
     "xyzstream/middleware"

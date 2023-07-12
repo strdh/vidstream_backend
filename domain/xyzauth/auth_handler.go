@@ -1,6 +1,7 @@
 package xyzauth
 
 import (
+    "os"
     "log"
     "strings"
     "unicode"
@@ -38,7 +39,7 @@ func validateRegister(request RegisterReq) (bool, map[string]string) {
         if !usernameRegex.MatchString(request.Username) {
             messages["username"] = "Username must contain only lowercase letters, numbers[0-9], and underscores"
         } else {
-            usernameExists, _ := utils.CheckUsername(request.Username)
+            usernameExists, _ := CheckUsername(request.Username)
             if usernameExists {
                 messages["username"] = "Username is already taken"
             }
@@ -53,7 +54,7 @@ func validateRegister(request RegisterReq) (bool, map[string]string) {
         if !isValid {
             messages["email"] = "Email is not valid"
         } else {
-            emailExists, _ := utils.CheckEmail(request.Email)
+            emailExists, _ := CheckEmail(request.Email)
             if emailExists {
                 messages["email"] = "Email is already taken"
             }
@@ -122,25 +123,20 @@ func hashPassword(password string) (string, error) {
     return string(hash), nil
 }
 
-func comparePassword(hash, plain string) (bool, error) {
-    err := bcrypt.CompareHashAndPassword([]byte(hash), []byte(plain))
-    if err != nil {
-        log.Println(err)
-        return false, err
-    }
-
-    return true, nil
+func comparePassword(hashedPassword, password string) bool {
+    err := bcrypt.CompareHashAndPassword([]byte(hashedPassword), []byte(password))
+    return err == nil
 }
 
 func Register(w http.ResponseWriter, r *http.Request) {
     if r.Method != http.MethodPost {
-        utils.WriteResponse(w, http.StatusMethodNotAllowed, "Method not allowed", nil)
+        utils.WriteResponse(w, r, http.StatusMethodNotAllowed, "Method not allowed", nil)
         return
     }
 
     body, err := ioutil.ReadAll(r.Body)
     if err != nil {
-        utils.WriteResponse(w, http.StatusInternalServerError, "Internal server error", nil)
+        utils.WriteResponse(w, r, http.StatusInternalServerError, "Internal server error", nil)
         return
     }
     defer r.Body.Close()
@@ -148,19 +144,19 @@ func Register(w http.ResponseWriter, r *http.Request) {
     var request RegisterReq
     err = json.Unmarshal(body, &request)
     if err != nil {
-        utils.WriteResponse(w, http.StatusBadRequest, "Invalid request body", nil)
+        utils.WriteResponse(w, r, http.StatusBadRequest, "Invalid request body", nil)
         return
     }
 
     isValid, messages := validateRegister(request)
     if !isValid {
-        utils.WriteResponse(w, http.StatusBadRequest, messages, nil)
+        utils.WriteResponse(w, r, http.StatusBadRequest, "invalid request", messages)
         return
     }
 
     hashedPassword, err := hashPassword(request.Password)
     if err != nil {
-        utils.WriteResponse(w, http.StatusInternalServerError, "Internal server error", nil)
+        utils.WriteResponse(w, r, http.StatusInternalServerError, "Internal server error", nil)
         return
     }
 
@@ -172,58 +168,54 @@ func Register(w http.ResponseWriter, r *http.Request) {
 
     id, err := Create(user)
     if err != nil {
-        utils.WriteResponse(w, http.StatusInternalServerError, "Internal server error", nil)
+        utils.WriteResponse(w, r, http.StatusInternalServerError, "Internal server error", nil)
         return
     }
 
-    utils.WriteResponse(w, http.StatusOK, "User created successfully", id)
+    utils.WriteResponse(w, r, http.StatusOK, "User created successfully", id)
 }
 
 func Login(w http.ResponseWriter, r *http.Request) {
     if r.Method != http.MethodPost {
-        utils.WriteResponse(w, http.StatusMethodNotAllowed, "Method not allowed", nil)
+        utils.WriteResponse(w, r, http.StatusMethodNotAllowed, "Method not allowed", nil)
         return
     }
 
     body, err := ioutil.ReadAll(r.Body)
     if err != nil {
-        utils.WriteResponse(w, http.StatusInternalServerError, "Internal server error", nil)
+        utils.WriteResponse(w, r, http.StatusInternalServerError, "Internal server error", nil)
         return
     }
 
     var request LoginReq
     err = json.Unmarshal(body, &request)
     if err != nil {
-        utils.WriteResponse(w, http.StatusBadRequest, "Invalid request body", nil)
+        utils.WriteResponse(w, r, http.StatusBadRequest, "Invalid request body", nil)
         return
     }
 
     isValid, messages := validateLogin(request)
     if !isValid {
-        utils.WriteResponse(w, http.StatusBadRequest, messages, nil)
+        utils.WriteResponse(w, r, http.StatusBadRequest, "invalid request", messages)
         return
     }
 
     user, err := ByUsername(request.Username)
     if err != nil {
-        utils.WriteResponse(w, http.StatusUnauthorized, "Username or password invalid", nil)
+        utils.WriteResponse(w, r, http.StatusUnauthorized, "Username or password invalid", nil)
         return
     }
 
     if !comparePassword(user.Password, request.Password) {
-        utils.WriteResponse(w, http.StatusUnauthorized, "Username or password invalid", nil)
+        utils.WriteResponse(w, r, http.StatusUnauthorized, "Username or password invalid", nil)
         return
     }
 
-    jwtToken, err := utils.GenerateJWT(user.ID)
-    if err != nil {
-        utils.WriteResponse(w, http.StatusInternalServerError, "Internal server error", nil)
-        return
-    }
+    jwtToken := utils.GenerateToken(user.Id, os.Getenv("JWT_KEY"))
 
     loginResponse := loginResp{
         Token: jwtToken,
     }
 
-    utils.WriteResponse(w, http.StatusOK, "Login successful", loginResponse)
+    utils.WriteResponse(w, r, http.StatusOK, "Login successful", loginResponse)
 }

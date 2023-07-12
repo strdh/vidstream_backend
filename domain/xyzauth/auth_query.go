@@ -13,8 +13,8 @@ type User struct{
     Created int `json:"created"`
 }
 
-func Create(user User) (int, error) {
-    result, err := config.DB.Exec("INSERT INTO users (email, username, password, created) VALUES (?, ?, ?, ?)", user.email, user.Username, user.Password, user.Created)
+func Create(user User) (int64, error) {
+    result, err := config.DB.Exec("INSERT INTO users (email, username, password, created) VALUES (?, ?, ?, ?)", user.Email, user.Username, user.Password, user.Created)
     if err != nil {
         log.Println(err)
         return 0, err
