@@ -18,6 +18,10 @@ func VodUpload(w http.ResponseWriter, r *http.Request) {
     }
 }
 
+func HandleChunk(w http.ResponseWriter, r *http.Request) {
+    
+}
+
 func VodList(w http.ResponseWriter, r *http.Request) {
     if r.Method != http.MethodGet {
         utils.WriteResponse(w, r, http.StatusMethodNotAllowed, "Method not allowed", nil)

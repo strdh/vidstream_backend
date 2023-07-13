@@ -1,17 +1,17 @@
 package main
 
 import (
+    "os"
     "log"
     "fmt"
-    "os"
     "net/http"
-    "xyzstream/config"
     "xyzstream/utils"
+    "xyzstream/config"
+    "xyzstream/middleware"
     "xyzstream/domain/xyzvod"
     "xyzstream/domain/xyzauth"
     "github.com/joho/godotenv"
     "github.com/gorilla/mux"
-    "xyzstream/middleware"
 )
 
 func main() {
@@ -30,7 +30,7 @@ func main() {
     router.HandleFunc("/login", xyzauth.Login).Methods("POST", "OPTIONS")
 
     router.HandleFunc("/vodupload", middleware.JWTMiddleware(xyzvod.VodUpload)).Methods("POST", "OPTIONS")
-    router.HandleFunc("/vod", xyzvod.VodList).Methods("GET", "OPTIONS")
+    router.HandleFunc("/vod", middleware.JWTMiddleware(xyzvod.VodList)).Methods("GET", "OPTIONS")
     router.HandleFunc("/vod/next/{id}", xyzvod.VodListNext).Methods("GET", "OPTIONS")
     router.HandleFunc("/vod/{vodulid}", xyzvod.VodDetail).Methods("GET", "OPTIONS")
     router.HandleFunc("/vod/stream/{segment}", xyzvod.VodStream).Methods("GET", "OPTIONS")
