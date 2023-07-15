@@ -29,7 +29,11 @@ func main() {
     router.HandleFunc("/register", xyzauth.Register).Methods("POST", "OPTIONS")
     router.HandleFunc("/login", xyzauth.Login).Methods("POST", "OPTIONS")
 
-    router.HandleFunc("/vodupload", middleware.JWTMiddleware(xyzvod.VodUpload)).Methods("POST", "OPTIONS")
+    // router.HandleFunc("/vodupload", middleware.JWTMiddleware(xyzvod.VodUpload)).Methods("POST", "OPTIONS")
+    // router.HandleFunc("/vodupload/{vodulid}", middleware.JWTMiddleware(xyzvod.HandleChunk)).Methods("POST", "OPTIONS")
+    router.HandleFunc("/vodupload", xyzvod.VodUpload).Methods("POST", "OPTIONS")
+    router.HandleFunc("/vodupload/{upulid}/continue", xyzvod.ContinueUpload).Methods("POST", "OPTIONS")
+    router.HandleFunc("/vodupload/{vodulid}", middleware.JWTMiddleware(xyzvod.HandleChunk)).Methods("POST", "OPTIONS")
     router.HandleFunc("/vod", middleware.JWTMiddleware(xyzvod.VodList)).Methods("GET", "OPTIONS")
     router.HandleFunc("/vod/next/{id}", xyzvod.VodListNext).Methods("GET", "OPTIONS")
     router.HandleFunc("/vod/{vodulid}", xyzvod.VodDetail).Methods("GET", "OPTIONS")
