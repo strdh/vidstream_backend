@@ -12,6 +12,7 @@ type Upload struct{
     Title string `json:"title"`
     Description string `json:"description"`
     Size int `json:"size"`
+    Ext string `json:"ext"`
     Progress int `json:"progress"`
     Created int64 `json:"created"`
     LastUpdated int64 `json:"last_update"`
@@ -21,7 +22,7 @@ type Upload struct{
 type VUQuery struct{}
 
 func (vu *VUQuery) Create(up Upload) (int64, error) {
-    result, err := config.DB.Exec("INSERT INTO uploads (id_user, upulid, title, description, size, progress, created, lastupdate, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)", up.IdUser, up.UpUlid, up.Title, up.Description, up.Size, up.Progress, up.Created, up.LastUpdated, up.Status)
+    result, err := config.DB.Exec("INSERT INTO uploads (id_user, upulid, title, description, size, ext, progress, created, lastupdate, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", up.IdUser, up.UpUlid, up.Title, up.Description, up.Size, up.Ext, up.Progress, up.Created, up.LastUpdated, up.Status)
     if err != nil {
         log.Println(err)
         return 0, err
