@@ -12,9 +12,10 @@ import (
     "io/ioutil"
     "encoding/json"
     "path/filepath"
+    "xyzstream/cache"
     "xyzstream/utils"
-    "github.com/oklog/ulid/v2"
     "github.com/gorilla/mux"
+    "github.com/oklog/ulid/v2"
 )
 
 func VodUpload(w http.ResponseWriter, r *http.Request) {
@@ -61,7 +62,7 @@ func VodUpload(w http.ResponseWriter, r *http.Request) {
         Status: 0,
     }
 
-    var query *VUQuery
+    query := &VUQuery{}
     _, err = query.Create(upload)
     if err != nil {
         log.Println(err)
@@ -78,6 +79,19 @@ func VodUpload(w http.ResponseWriter, r *http.Request) {
     }
     defer tempFile.Close()
 
+    upCache := cache.UpCache{
+        Expire: 3600,
+        Created: time.Now().Unix(),
+        TotalChunk: request.TotalChunks,
+        ChunkRemaining: request.TotalChunks,
+    }
+
+    err = cache.SetUpCache(finalUlid, upCache)
+    if err != nil {
+        utils.WriteResponse(w, r, http.StatusInternalServerError, "Internal server error", nil)
+        return
+    }
+
     utils.WriteResponse(w, r, http.StatusOK, "OK", finalUlid)
 }
 
@@ -90,7 +104,7 @@ func ContinueUpload(w http.ResponseWriter, r *http.Request) {
     vars := mux.Vars(r)
     upUlid := vars["upulid"]
 
-    var query *VUQuery
+    query := &VUQuery{}
     id, err := query.CheckUlid(upUlid)
     if err != nil {
         utils.WriteResponse(w, r, http.StatusNotFound, "Not found", nil)
@@ -109,6 +123,20 @@ func HandleChunk(w http.ResponseWriter, r *http.Request) {
 
     vars := mux.Vars(r)
     upUlid := vars["upulid"]
+
+    //check cache
+    chunkStatus, err := cache.GetUpCache(upUlid)
+    if err != nil {
+        utils.WriteResponse(w, r, http.StatusBadRequest, "Bad Request", nil)
+        return
+    }
+
+    //check chunk remaining
+    chunkRemaining := chunkStatus.ChunkRemaining
+    if chunkRemaining == 0 {
+        utils.WriteResponse(w, r, http.StatusBadRequest, "Bad Request", nil)
+        return
+    }
 
     //extract chunk data from request
     chunkData, err := ioutil.ReadAll(r.Body)
@@ -132,6 +160,14 @@ func HandleChunk(w http.ResponseWriter, r *http.Request) {
         return
     }
 
+    //update cache
+    chunkStatus.ChunkRemaining = chunkRemaining - 1
+    cache.UpCacheMap[upUlid] = chunkStatus
+
+    // if chunkRemaining == 0 {
+    //     //process the video using ffmpeg and send to object storage
+    // }
+
     utils.WriteResponse(w, r, http.StatusOK, "OK", nil)
 }
 
@@ -141,7 +177,8 @@ func VodList(w http.ResponseWriter, r *http.Request) {
         return
     }
 
-    vods, err := Vods()
+    query := &VodQuery{}
+    vods, err := query.Vods()
     if err != nil {
         log.Println(err)
         utils.WriteResponse(w, r, http.StatusInternalServerError, "Internal server error", nil)
@@ -166,7 +203,8 @@ func VodListNext(w http.ResponseWriter, r *http.Request) {
         return
     }
 
-    vods, err := VodsNext(id)
+    query := &VodQuery{}
+    vods, err := query.VodsNext(id)
     if err != nil {
         log.Println(err)
         utils.WriteResponse(w, r, http.StatusInternalServerError, "Internal server error", nil)
@@ -185,7 +223,8 @@ func VodDetail(w http.ResponseWriter, r *http.Request) {
     vars := mux.Vars(r)
     vodulid := vars["vodulid"]
 
-    vodDetail, err := ByUlid(vodulid)
+    query := &VodQuery{}
+    vodDetail, err := query.ByUlid(vodulid)
     if err != nil {
         log.Println(err)
         utils.WriteResponse(w, r, http.StatusNotFound, "Not found", nil)

@@ -62,8 +62,9 @@ func Register(w http.ResponseWriter, r *http.Request) {
         Email: request.Email,
         Password: hashedPassword,
     }
-
-    id, err := Create(user)
+    
+    query := &AuthQuery{}
+    id, err := query.Create(user)
     if err != nil {
         utils.WriteResponse(w, r, http.StatusInternalServerError, "Internal server error", nil)
         return
@@ -97,7 +98,8 @@ func Login(w http.ResponseWriter, r *http.Request) {
         return
     }
 
-    user, err := ByUsername(request.Username)
+    query := &AuthQuery{}
+    user, err := query.ByUsername(request.Username)
     if err != nil {
         utils.WriteResponse(w, r, http.StatusUnauthorized, "Username or password invalid", nil)
         return

@@ -14,7 +14,9 @@ type Vod struct{
     Created int `json:"created"`
 }
 
-func Vods() ([]Vod, error) {
+type VodQuery struct{}
+
+func (vq *VodQuery) Vods() ([]Vod, error) {
     var vods []Vod
     var temp Vod
 
@@ -38,7 +40,7 @@ func Vods() ([]Vod, error) {
     return vods, nil
 }
 
-func VodsNext(id int) ([]Vod, error) {
+func (vq *VodQuery) VodsNext(id int) ([]Vod, error) {
     var vods []Vod
     var temp Vod
 
@@ -62,7 +64,7 @@ func VodsNext(id int) ([]Vod, error) {
     return vods, nil
 }
 
-func ByUlid(vodUlid string) (Vod, error) {
+func (vq *VodQuery) ByUlid(vodUlid string) (Vod, error) {
     var vod Vod
     row := config.DB.QueryRow("SELECT * FROM vods WHERE vod_ulid = ?", vodUlid)
     err := row.Scan(&vod.Id, &vod.VodUlid, &vod.Title, &vod.Description, &vod.Duration, &vod.Created)
@@ -74,7 +76,7 @@ func ByUlid(vodUlid string) (Vod, error) {
     return vod, nil
 }
 
-func Create(vod Vod) (int64, error) {
+func (vq *VodQuery) Create(vod Vod) (int64, error) {
     result, err := config.DB.Exec("INSERT INTO vods (vod_ulid, title, description, duration, created) VALUES (?, ?, ?, ?, ?)", vod.VodUlid, vod.Title, vod.Description, vod.Duration, vod.Created)
     if err != nil {
         log.Println(err)

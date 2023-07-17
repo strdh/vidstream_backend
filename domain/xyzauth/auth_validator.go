@@ -32,7 +32,8 @@ func ValidateRegister(request RegisterReq) (bool, map[string]string) {
         if !usernameRegex.MatchString(request.Username) {
             messages["username"] = "Username must contain only lowercase letters, numbers[0-9], and underscores"
         } else {
-            usernameExists, _ := CheckUsername(request.Username)
+            query := &AuthQuery{}
+            usernameExists, _ := query.CheckUsername(request.Username)
             if usernameExists {
                 messages["username"] = "Username is already taken"
             }
@@ -47,7 +48,8 @@ func ValidateRegister(request RegisterReq) (bool, map[string]string) {
         if !isValid {
             messages["email"] = "Email is not valid"
         } else {
-            emailExists, _ := CheckEmail(request.Email)
+            query := &AuthQuery{}
+            emailExists, _ := query.CheckEmail(request.Email)
             if emailExists {
                 messages["email"] = "Email is already taken"
             }

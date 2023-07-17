@@ -13,7 +13,9 @@ type User struct{
     Created int `json:"created"`
 }
 
-func Create(user User) (int64, error) {
+type AuthQuery struct{}
+
+func (aq *AuthQuery) Create(user User) (int64, error) {
     result, err := config.DB.Exec("INSERT INTO users (email, username, password, created) VALUES (?, ?, ?, ?)", user.Email, user.Username, user.Password, user.Created)
     if err != nil {
         log.Println(err)
@@ -29,7 +31,7 @@ func Create(user User) (int64, error) {
     return id, nil
 }
 
-func ByUsername(username string) (User, error) {
+func (aq *AuthQuery) ByUsername(username string) (User, error) {
     var user User
     row := config.DB.QueryRow("SELECT * FROM users WHERE username = ?", username)
     err := row.Scan(&user.Id, &user.Email, &user.Username, &user.Password, &user.Created)
@@ -41,7 +43,7 @@ func ByUsername(username string) (User, error) {
     return user, nil
 }
 
-func CheckUsername(username string) (bool, error) {
+func (aq *AuthQuery) CheckUsername(username string) (bool, error) {
     var count int
     err := config.DB.QueryRow("SELECT COUNT(*) FROM users WHERE username = ?", username).Scan(&count)
     if err != nil {
@@ -52,7 +54,7 @@ func CheckUsername(username string) (bool, error) {
     return count > 0, nil
 }
 
-func CheckEmail(email string) (bool, error) {
+func (aq *AuthQuery) CheckEmail(email string) (bool, error) {
     var count int
     err := config.DB.QueryRow("SELECT COUNT(*) FROM users WHERE email = ?", email).Scan(&count)
     if err != nil {

@@ -5,6 +5,7 @@ type VodUploadReq struct{
     Description string `json:"description"`
     Size int `json:"size"`
     Ext string `json:"ext"`
+    TotalChunks int `json:"total_chunk"`
 }
 
 func ValidateUpload(request VodUploadReq) (bool, map[string]string) {
