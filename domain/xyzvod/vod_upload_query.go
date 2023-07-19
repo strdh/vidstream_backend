@@ -52,3 +52,13 @@ func (vu *VUQuery) CheckUlid(upulid string) (bool, error) {
 
     return false, nil
 }
+
+func (vu *VUQuery) Update(upulid string) error {
+    _, err := config.DB.Exec("UPDATE uploads SET progress = progress + 1, status = 1 WHERE upulid = ?", upulid)
+    if err != nil {
+        log.Println(err)
+        return err
+    }
+
+    return nil
+}

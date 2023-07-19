@@ -7,6 +7,7 @@ import (
     "log"
     "time"
     "bytes"
+    "os/exec"
     "strconv"
     "net/http"
     "io/ioutil"
@@ -82,6 +83,7 @@ func VodUpload(w http.ResponseWriter, r *http.Request) {
     upCache := cache.UpCache{
         Expire: 3600,
         Created: time.Now().Unix(),
+        Ext: request.Ext,
         TotalChunk: request.TotalChunks,
         ChunkRemaining: request.TotalChunks,
     }
@@ -114,6 +116,7 @@ func ContinueUpload(w http.ResponseWriter, r *http.Request) {
     utils.WriteResponse(w, r, http.StatusOK, "OK", id)
 }
 
+//chunk handling upload
 func HandleChunk(w http.ResponseWriter, r *http.Request) {
     fmt.Println("handle chunk")
     if r.Method != http.MethodPost {
@@ -147,12 +150,13 @@ func HandleChunk(w http.ResponseWriter, r *http.Request) {
     defer r.Body.Close()
 
     //open temp file
-    tempFilePath := filepath.Join(os.Getenv("XYZ1_TEMP"), upUlid + ".temp")
+    tempFilePath := filepath.Join(os.Getenv("XYZ1_TEMP"), upUlid + chunkStatus.Ext)
     tempFile, err := os.OpenFile(tempFilePath, os.O_APPEND|os.O_WRONLY, 0644)
     if err != nil {
         utils.WriteResponse(w, r, http.StatusInternalServerError, "Internal server error", nil)
         return
     }
+    defer tempFile.Close()
 
     _, err = io.Copy(tempFile, bytes.NewReader(chunkData))
     if err != nil {
@@ -160,15 +164,50 @@ func HandleChunk(w http.ResponseWriter, r *http.Request) {
         return
     }
 
+    utils.WriteResponse(w, r, http.StatusOK, "OK", nil)
+
     //update cache
     chunkStatus.ChunkRemaining = chunkRemaining - 1
     cache.UpCacheMap[upUlid] = chunkStatus
 
-    // if chunkRemaining == 0 {
-    //     //process the video using ffmpeg and send to object storage
-    // }
+    fmt.Println("chunk remaining", chunkStatus.ChunkRemaining)
 
-    utils.WriteResponse(w, r, http.StatusOK, "OK", nil)
+    if chunkStatus.ChunkRemaining == 0 {
+        //generate m3u8 and the segments and send m3u8 file and the segements to object storage
+        go func(filePath string, upUlid string) {
+            f360p := filepath.Join(os.Getenv("XYZ1_M3U8"), upUlid + "360p.m3u8")
+            f720p := filepath.Join(os.Getenv("XYZ1_M3U8"), upUlid + "720p.m3u8")
+            f1080p := filepath.Join(os.Getenv("XYZ1_M3U8"), upUlid + "1080p.m3u8")
+
+            f360pSeg := filepath.Join(os.Getenv("XYZ1_SEGMENT"), upUlid + "360p_%03d.ts")
+            f720pSeg := filepath.Join(os.Getenv("XYZ1_SEGMENT"), upUlid + "720p_%03d.ts")
+            f1080pSeg := filepath.Join(os.Getenv("XYZ1_SEGMENT"), upUlid + "1080p_%03d.ts")
+
+            cmd := exec.Command("ffmpeg","-i", filePath, "-vf", "scale=w=640:h=360:force_original_aspect_ratio=decrease", "-c:v", "h264", "-b:v", "800k", "-c:a", "aac", "-ar", "48000", "-ac", "2", "-f", "hls", "-hls_time", "10", "-hls_list_size", "0", "-hls_segment_filename", f360pSeg , f360p, "-vf", "scale=w=1280:h=720:force_original_aspect_ratio=decrease", "-c:v", "h264", "-b:v", "2000k", "-c:a", "aac", "-ar", "48000", "-ac", "2", "-f", "hls", "-hls_time", "10", "-hls_list_size", "0", "-hls_segment_filename", f720pSeg, f720p, "-vf", "scale=w=1920:h=1080:force_original_aspect_ratio=decrease", "-c:v", "h264", "-b:v", "5000k", "-c:a", "aac", "-ar", "48000", "-ac", "2", "-f", "hls", "-hls_time", "10", "-hls_list_size", "0", "-hls_segment_filename", f1080pSeg, f1080p)
+
+            cmd.Stdout = os.Stdout
+	        cmd.Stderr = os.Stderr
+
+            err := cmd.Run()
+            if err != nil {
+                log.Println(err)
+                return
+            }
+        }(tempFilePath, upUlid)
+
+        //update upload status on the db
+        go func(upUlid string) {
+            query := &VUQuery{}
+            err := query.Update(upUlid)
+            if err != nil {
+                utils.WriteResponse(w, r, http.StatusInternalServerError, "Internal server error", nil)
+                return
+            }
+        }(upUlid)
+
+        //delete cache
+        delete(cache.UpCacheMap, upUlid)
+    }
 }
 
 func VodList(w http.ResponseWriter, r *http.Request) {

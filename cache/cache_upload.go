@@ -8,6 +8,7 @@ import (
 type UpCache struct{
     Expire int64 `json:"expire"`
     Created int64 `json:"created"`
+    Ext string `json:"ext"`
     TotalChunk int `json:"total_chunk"`
     ChunkRemaining int `json:"chunk_remaining"`
 }
