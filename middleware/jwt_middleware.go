@@ -17,13 +17,13 @@ func JWTMiddleware(next http.HandlerFunc) http.HandlerFunc {
             return
         }
 
-        userId, ok := claims["sub"]
+        idUser, ok := claims["sub"]
         if !ok {
             utils.WriteResponse(w, r, http.StatusUnauthorized, "Unauthorized", nil)
             return
         }
 
-        ctx := context.WithValue(r.Context(), "userId", userId)
+        ctx := context.WithValue(r.Context(), "idUser", idUser)
         r = r.WithContext(ctx)
 
         next.ServeHTTP(w, r)

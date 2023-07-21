@@ -61,8 +61,11 @@ func VodUpload(w http.ResponseWriter, r *http.Request) {
     query1 := &VodQuery{}
     _, err = query1.Create(vodData)
 
+    idUser := r.Context().Value("idUser").(float64)
+    finalIdUser := int(idUser)
+
     upload := Upload{
-        IdUser: 1,
+        IdUser: finalIdUser,
         UpUlid: finalUlid,
         Title: request.Title,
         Description: request.Description,
@@ -183,6 +186,7 @@ func HandleChunk(w http.ResponseWriter, r *http.Request) {
 
     fmt.Println("chunk remaining", chunkStatus.ChunkRemaining)
 
+    //if all chunk already uploaded
     if chunkStatus.ChunkRemaining == 0 {
         //generate m3u8 and the segments and send m3u8 file and the segements to object storage
         go func(filePath string, upUlid string) {
@@ -310,6 +314,9 @@ func HandleChunk(w http.ResponseWriter, r *http.Request) {
 
         //delete cache
         delete(cache.UpCacheMap, upUlid)
+
+        //if the m3u8 file and the segments already sent to the object storage delete video file on the server
+        //I still figure out about the most effective delete mechanism
     }
 }
 
