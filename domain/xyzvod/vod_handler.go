@@ -50,6 +50,17 @@ func VodUpload(w http.ResponseWriter, r *http.Request) {
     ulid := ulid.Make()
     finalUlid := ulid.String()
 
+    vodData := Vod{
+        VodUlid: finalUlid,
+        Title: request.Title,
+        Description: request.Description,
+        Duration: 0,
+        Created: time.Now().Unix(),
+    }
+
+    query1 := &VodQuery{}
+    _, err = query1.Create(vodData)
+
     upload := Upload{
         IdUser: 1,
         UpUlid: finalUlid,
@@ -63,8 +74,8 @@ func VodUpload(w http.ResponseWriter, r *http.Request) {
         Status: 0,
     }
 
-    query := &VUQuery{}
-    _, err = query.Create(upload)
+    query2 := &VUQuery{}
+    _, err = query2.Create(upload)
     if err != nil {
         log.Println(err)
         utils.WriteResponse(w, r, http.StatusInternalServerError, "Internal server error", nil)
@@ -193,6 +204,98 @@ func HandleChunk(w http.ResponseWriter, r *http.Request) {
                 log.Println(err)
                 return
             }
+
+            go func(f360p, upUlid string) {
+                fmt.Println("Send 360 :", f360p)
+                
+                objKey := upUlid + "360p.m3u8"
+                err := utils.ObjUpload(os.Getenv("XYZ1_BUCKET"), f360p, objKey)
+                if err != nil {
+                    log.Println(err)
+                    return
+                }
+            }(f360p, upUlid)
+
+            go func(f720p, upUlid string) {
+                fmt.Println("Send 720 :", f720p)
+                objKey := upUlid + "720p.m3u8"
+                err := utils.ObjUpload(os.Getenv("XYZ1_BUCKET"), f720p, objKey)
+                if err != nil {
+                    log.Println(err)
+                    return
+                }
+            }(f720p, upUlid)
+
+            go func(f1080p, upUlid string) {
+                fmt.Println("Send 1080 :", f1080p)
+                objKey := upUlid + "1080p.m3u8"
+                err := utils.ObjUpload(os.Getenv("XYZ1_BUCKET"), f1080p, objKey)
+                if err != nil {
+                    log.Println(err)
+                    return
+                }
+            }(f1080p, upUlid)
+
+            go func(f360pSeg, upUlid string) {
+                iter := 0
+                for {
+                    filename := fmt.Sprintf(f360pSeg, iter)
+                    _, err := os.Stat(filename)
+                    if err != nil {
+                        break
+                    }
+                    
+                    keyPattern := upUlid + "360p_%03d.ts"
+                    objKey := fmt.Sprintf(keyPattern, iter)
+                    fmt.Println()
+                    err = utils.ObjUpload(os.Getenv("XYZ1_BUCKET"), filename, objKey)
+                    if err != nil {
+                        break
+                    }
+
+                    iter++
+                }
+            }(f360pSeg, upUlid)
+
+            go func(f720pSeg, upUlid string) {
+                iter := 0
+                for {
+                    filename := fmt.Sprintf(f720pSeg, iter)
+                    _, err := os.Stat(filename)
+                    if err != nil {
+                        break
+                    }
+                    
+                    keyPattern := upUlid + "720p_%03d.ts"
+                    objKey := fmt.Sprintf(keyPattern, iter)
+                    err = utils.ObjUpload(os.Getenv("XYZ1_BUCKET"), filename, objKey)
+                    if err != nil {
+                        break
+                    }
+
+                    iter++
+                }
+            }(f720pSeg, upUlid)
+
+            go func(f1080pSeg, upUlid string) {
+                iter := 0
+                for {
+                    filename := fmt.Sprintf(f1080pSeg, iter)
+                    _, err := os.Stat(filename)
+                    if err != nil {
+                        break
+                    }
+                    
+                    keyPattern := upUlid + "1080p_%03d.ts"
+                    objKey := fmt.Sprintf(keyPattern, iter)
+                    err = utils.ObjUpload(os.Getenv("XYZ1_BUCKET"), filename, objKey)
+                    if err != nil {
+                        break
+                    }
+
+                    iter++
+                }
+            }(f1080pSeg, upUlid)
         }(tempFilePath, upUlid)
 
         //update upload status on the db

@@ -11,7 +11,7 @@ type Vod struct{
     Title string `json:"title"`
     Description string `json:"description"`
     Duration int `json:"duration"`
-    Created int `json:"created"`
+    Created int64 `json:"created"`
 }
 
 type VodQuery struct{}
