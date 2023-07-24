@@ -50,6 +50,7 @@ func VodUpload(w http.ResponseWriter, r *http.Request) {
     ulid := ulid.Make()
     finalUlid := ulid.String()
 
+    //for duration I still figure out the effective way for get the video duration since the upload is using chunk
     vodData := Vod{
         VodUlid: finalUlid,
         Title: request.Title,
