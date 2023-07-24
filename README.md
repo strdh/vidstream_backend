@@ -1,5 +1,5 @@
 ## Introduction
-This Web API has functionality as VOD(Video On Demand) streaming backend. I created this Web API as a portfolio to learn about how video streaming works, and video processing like encoding, and transcoding. I also learned how
+This Web API has functionality as VOD(Video On Demand) streaming backend. I created this Web API as a portfolio to learn about how video streaming works, and video processing like encoding and transcoding. I also learned how
 to integrate object storage with app service. I build this Web API using Go Programming language and use FFMPEG for video processing. I also implemented HLS(HTTP Video Livestreaming).
 
 ## Tech Stacks
