@@ -1,5 +1,5 @@
 ## Introduction
-This Web API has functionality as VOD(Video On Demand) streaming backend. I created this Web API as a portfolio to learn about how video streaming works, and video processing like encoding, and transcoding. I also learned how
+This Web API has functionality as VOD(Video On Demand) streaming backend. I created this Web API as a portfolio to learn about how video streaming works, and video processing like encoding and transcoding. I also learned how
 to integrate object storage with app service. I build this Web API using Go Programming language and use FFMPEG for video processing. I also implemented HLS(HTTP Video Livestreaming).
 
 ## Tech Stacks
@@ -12,7 +12,18 @@ The tech stack that I used to build this is
   <li>MYSQL</li>
   <li>JWT</li>
  </ul>
- 
+
+ Lib that I used on this project
+
+ * [github.com/go-sql-driver/mysql](https://github.com/go-sql-driver/mysql)
+ * [github.com/golang-jwt/jwt](https://github.com/golang-jwt/jwt)
+ * [github.com/gorilla/mux](https://github.com/gorilla/mux)
+ * [github.com/joho/godotenv](https://github.com/joho/godotenv)
+ * [golang.org/x/crypto](https://pkg.go.dev/golang.org/x/crypto)
+ * [github.com/oklog/ulid/v2](https://github.com/oklog/ulid)
+ * [github.com/aws/aws-sdk-go](https://github.com/aws/aws-sdk-go)
+
+   
 [Go]: https://img.shields.io/badge/go-%2300ADD8.svg?style=for-the-badge&logo=go&logoColor=white
 [Go_URL]: https://go.dev/
 [FFMPEG]: https://a11ybadges.com/badge?logo=ffmpeg
@@ -23,3 +34,4 @@ The tech stack that I used to build this is
 [JWT_URL]: https://jwt.io/
 
 ## System Design Schema
+![My Image](systemdesign.png)
