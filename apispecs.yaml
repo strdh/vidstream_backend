@@ -1,0 +1,549 @@
+openapi: 3.0.3
+info:
+  title: Vidstream Backend API
+  description: |-
+    This is a the documentation of Vidstream backend API
+  contact:
+    email: strdh33@gmail.com
+  version: 1.0.0
+tags:
+  - name: auth
+    description: Endpoints for auth
+  - name: vod(Video on Demand)
+    description: Endpoints for video on demand
+paths:
+  /register:
+    post:
+      tags:
+        - auth
+      summary: Register for new users
+      description:  This endpoint allows users to register and create a new account.
+      operationId: xyzauth.Register
+      requestBody: 
+        content: 
+          application/json:
+            schema: 
+              $ref: '#/components/schemas/RegisterRequest'
+        required: true
+      responses:
+        '200':
+          description: Register success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response_200'
+        '400':
+          description: Invalid request body
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response_400'
+        '405':
+          description: Method not allowed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response_405'
+        '500':
+          description: Status internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response_500'
+  /login:
+    post:
+      tags:
+        - auth
+      summary: Login for users
+      description: This endpoint allows users to login
+      operationId: xyzauth.Login
+      requestBody:
+        content:
+          application/json:
+            schema: 
+              $ref: '#/components/schemas/LoginRequest'
+        required: true
+      responses:
+        '200':
+          description: Login success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginSuccess'
+        '400':
+          description: Invalid request body
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response_400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response_401'
+        '405':
+          description: Method not allowed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response_405'
+        '500':
+          description: Status internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response_500'
+  /vodupload:
+    post:
+      tags: 
+        - vod(Video on Demand)
+      summary: Enpoint for initialize the upload video
+      description: This enpoint is for initilize the upload video, the initilize process is create a record on db and create cache for upload
+      operationId: xyzvod.VodUpload
+      requestBody:
+        content:
+          application/json:
+            schema: 
+              $ref: '#/components/schemas/InitUploadRequest'
+        required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response_200'
+        '400':
+          description: Invalid request body
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response_400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response_401'
+        '405':
+          description: Method not allowed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response_405'
+        '500':
+          description: Status internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response_500'
+      
+  /vodupload/{upulid}/chunk:
+    post:
+      tags:
+        - vod(Video on Demand)
+      summary: Endpoint for sending upload chunk
+      description: After initialize success the next step is handling upload chunks, the upload mechanism using chunks because it make the pause and continue upload possible
+      operationId: xyzvod.HandleChunk
+      parameters:
+        - name: upulid
+          in: path
+          description: upulid is ULID that used as ID for upload progress
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/octet-stream:
+            schema:
+              type: string
+              format: binary
+        required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response_200'
+        '400':
+          description: Invalid request body
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response_400'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response_401'
+        '405':
+          description: Method not allowed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response_405'
+        '500':
+          description: Status internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response_500'
+  /vodupload/{upulid}:
+    post:
+      tags:
+        - vod(Video on Demand)
+      summary: Endpoint for continue upload
+      description: This endpoint is used for continue upload when uploading process has ben paused, this endpoint just check an upload progress by select data based upulid on DB
+      operationId: xyzvod.ContinueUpload
+      parameters:
+        - name: upulid
+          in: path
+          description: upulid is ULID that used as ID for upload progress
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response_200'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response_401'
+        '404':
+          description: Upload not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response_404'
+        '405':
+          description: Method not allowed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response_405'
+        '500':
+          description: Status internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response_500'
+        
+  /vod:
+    get:
+      tags:
+        - vod(Video on Demand)
+      summary: Endpoint get video lists
+      description: This endpoint is used for get video lists
+      operationId: xyzvod.VodList
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response_200'
+        '405':
+          description: Method not allowed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response_405'
+        '500':
+          description: Status internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response_500'
+  /vod/next/{id}:
+    get:
+      tags:
+        - vod(Video on Demand)
+      summary: Endpoint get next page video lists
+      description: This endpoint is used for get next page video lists
+      operationId: xyzvod.VodListNext
+      parameters:
+        - name: id
+          in: path
+          description: id for next page
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response_200'
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response_404'
+        '405':
+          description: Method not allowed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response_405'
+        '500':
+          description: Status internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response_500'
+  /vod/{vodulid}:
+    get:
+      tags:
+        - vod(Video on Demand)
+      summary: Endpoint get video detail information
+      description: This endpoint is used for get video detail information
+      operationId: xyzvod.VodDetail
+      parameters:
+        - name: vodulid
+          in: path
+          description: vodulid is ulid for video
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response_200'
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response_404'
+        '405':
+          description: Method not allowed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response_405'
+        '500':
+          description: Status internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response_500'
+  /vod/stream/{segment}:
+    get:
+      tags:
+        - vod(Video on Demand)
+      summary: Endpoint to serve segment video
+      description: This endpoint is used for handling segment stream
+      operationId: xyzvod.VodStream
+      parameters:
+        - name: segment
+          in: path
+          description: the segment is id for segment video
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            video/mp2t:
+              schema:
+                type: string
+                format: binary
+        '405':
+          description: Method not allowed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response_405'
+        '500':
+          description: Status internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response_500'
+components:
+  schemas:
+    RegisterRequest:
+      type: object
+      required: 
+        - email
+        - username
+        - password
+      properties:
+        email:
+         type: string
+         format: email
+         example: example@mail.com
+        username:
+          type: string
+          example: exampleusername
+        password:
+          type: string
+          example: examplepassword
+    LoginRequest:
+      type: object
+      required:
+        - username
+        - password
+      properties:
+        username:
+          type: string
+          example: exampleusername
+        password:
+          type: string
+          example: examplepassword
+    LoginSuccess:
+      type: object
+      required:
+        - status
+        - message
+        - data
+      properties:
+        status:
+          type: integer
+          format: int
+          example: 200
+        message:
+          type: string
+          example: Login successfully
+        data:
+          type: object
+          example: {
+            token: Example Token
+          }
+    InitUploadRequest:
+      type: object
+      required:
+        - title
+        - description
+        - size
+        - ext
+        - total_chunk
+      properties:
+        title:
+          type: string
+          example: titleexample
+        description:
+          type: string
+          example: descriptionexample
+        size:
+          type: integer
+          format: int64
+          example: 1000000
+        ext:
+          type: string
+          example: .mp4
+        total_chunk:
+          type: integer
+          example: 100
+    Response_200:
+      type: object
+      required:
+        - status
+        - message
+        - data
+      properties:
+        status:
+          type: integer
+          format: int
+          example: 200
+        message:
+          type: string
+          example: Operation successfully
+        data:
+          type: object
+    Response_400:
+      type: object
+      required:
+        - status
+        - message
+        - data
+      properties:
+        status:
+          type: integer
+          format: int
+          example: 400
+        message:
+          type: string
+          example: invalid request body
+        data:
+          type: object
+    Response_401:
+      type: object
+      required:
+        - status
+        - message
+        - data
+      properties:
+        status:
+          type: integer
+          format: int
+          example: 401
+        message:
+          type: string
+          example: Unauthorized
+        data:
+          type: object
+    Response_404:
+      type: object
+      required:
+        - status
+        - message
+        - data
+      properties:
+        status:
+          type: integer
+          format: int
+          example: 404
+        message:
+          type: string
+          example: Not found
+        data:
+          type: object
+    Response_405:
+      type: object
+      required:
+        - status
+        - message
+        - data
+      properties:
+        status:
+          type: integer
+          format: int
+          example: 405
+        message:
+          type: string
+          example: Method not allowed
+        data:
+          type: object
+    Response_500:
+      type: object
+      required:
+        - status
+        - message
+        - data
+      properties:
+        status:
+          type: integer
+          format: int
+          example: 500
+        message:
+          type: string
+          example: Internal server error
+        data:
+          type: object
+        
